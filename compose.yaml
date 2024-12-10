@@ -1,0 +1,22 @@
+services:
+  s3-minio:
+    image: quay.io/minio/minio
+    container_name: s3-minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password
+
+  lambda:
+    build:
+      context: .
+    container_name: lambda
+    platform: linux/amd64
+    ports:
+      - "8080:9000" # ローカルホスト用にポートを変更
+    environment:
+      AWS_ACCESS_KEY_ID: admin
+      AWS_SECRET_ACCESS_KEY: password
