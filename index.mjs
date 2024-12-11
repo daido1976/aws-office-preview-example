@@ -1,3 +1,4 @@
+// @ts-check
 import {
   S3Client,
   GetObjectCommand,
@@ -9,10 +10,13 @@ import path from "path";
 
 // TODO: あとで環境変数に移動
 const s3 = new S3Client({
-  endpoint: "http://minio:9000",
-  s3ForcePathStyle: true, // パススタイルを有効化
-  accessKeyId: "admin", // MinIOのルートユーザー名
-  secretAccessKey: "password", // MinIOのルートパスワード
+  endpoint: "http://s3-minio:9000", // MinIOのエンドポイント（ドメインは docker compose のサービス名）
+  region: "ap-northeast-1", // MinIOでは任意の値でOK
+  forcePathStyle: true, // パススタイルを有効化
+  credentials: {
+    accessKeyId: "admin", // MinIOのルートユーザー名
+    secretAccessKey: "password", // MinIOのルートパスワード
+  },
 });
 
 /**
@@ -20,6 +24,7 @@ const s3 = new S3Client({
  * @returns {Promise<import('aws-lambda').APIGatewayProxyResultV2>}
  */
 export const handler = async (event) => {
+  console.log("hello from lambda");
   const bucketName = process.env.S3_BUCKET_NAME;
   const objectKey = event.queryStringParameters?.key ?? "";
   const tmpPath = process.env.HOME ?? "/tmp";

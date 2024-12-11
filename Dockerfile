@@ -34,4 +34,4 @@ RUN npm install
 
 ENV LO_BINARY_PATH=soffice
 
-CMD [ "for-local.handler" ]
+CMD [ "index.handler" ]

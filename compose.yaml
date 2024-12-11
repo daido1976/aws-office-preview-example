@@ -16,7 +16,11 @@ services:
     container_name: lambda
     platform: linux/amd64
     ports:
-      - "8080:9000" # ローカルホスト用にポートを変更
+      - "9002:8080" # Lambda の RIE が 8080 ポートで待ち受けているため、ホスト側のポートを 8080 にバインドする
     environment:
       AWS_ACCESS_KEY_ID: admin
       AWS_SECRET_ACCESS_KEY: password
+    env_file:
+      - .env
+    depends_on:
+      - s3-minio
