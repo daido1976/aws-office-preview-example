@@ -12,7 +12,7 @@ services:
 
   lambda:
     build:
-      context: .
+      context: ./lambda
     container_name: lambda
     platform: linux/amd64
     ports:
