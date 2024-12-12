@@ -10,6 +10,21 @@ services:
       MINIO_ROOT_USER: admin
       MINIO_ROOT_PASSWORD: password
 
+  # See. https://stackoverflow.com/questions/66412289/minio-add-a-public-bucket-with-docker-compose
+  createbuckets:
+    image: minio/mc
+    container_name: createbuckets
+    depends_on:
+      - s3-minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc config host add myminio http://s3-minio:9000 admin password;
+      mc rm -r --force myminio/test-bucket;
+      mc mb myminio/test-bucket;
+      mc anonymous set public myminio/test-bucket;
+      exit 0;"
+
   lambda:
     build:
       context: ./lambda
