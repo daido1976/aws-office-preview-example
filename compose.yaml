@@ -39,3 +39,14 @@ services:
       - .env
     depends_on:
       - s3-minio
+
+  lambda-function-url:
+    image: daido1976/aws-lambda-function-url-emulator
+    container_name: lambda-function-url
+    ports:
+      - "8080:8081"
+    depends_on:
+      - lambda
+    environment:
+      PORT: 8081
+      RIE_ENDPOINT: "http://host.docker.internal:9002/2015-03-31/functions/function/invocations"
