@@ -1,0 +1,11 @@
+{
+  "name": "aws-office-preview-web",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "devDependencies": {
+    "typescript": "^5.7.2"
+  }
+}
