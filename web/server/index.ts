@@ -1,9 +1,9 @@
 // Shared Types
 type ApiResponse<T> = { success: boolean; data: T | null; error?: string };
+type UploadUrlRequestBody = { filename: string };
 type UploadUrlResponse = { uploadUrl: string; fileId: string };
-type PreviewUrlResponse = { previewUrl: string };
-type UploadUrlRequest = { filename: string };
 type PreviewUrlRequest = { fileId: string };
+type PreviewUrlResponse = { previewUrl: string };
 
 // Express + TypeScript (web api)
 import express, { Request, Response } from "express";
@@ -18,10 +18,18 @@ import * as crypto from "crypto";
 const app = express();
 const port = 3000;
 
-// TODO: ちゃんと設定する
-const s3 = new S3Client({});
+// TODO: あとで環境変数に移動
+const s3 = new S3Client({
+  endpoint: "http://localhost:9000", // MinIOのエンドポイント（ドメインは docker compose のサービス名）
+  region: "ap-northeast-1", // MinIOでは任意の値でOK
+  forcePathStyle: true, // パススタイルを有効化
+  credentials: {
+    accessKeyId: "admin", // MinIOのルートユーザー名
+    secretAccessKey: "password", // MinIOのルートパスワード
+  },
+});
 
-const BUCKET_NAME = process.env.S3_BUCKET_NAME!;
+const BUCKET_NAME = process.env.S3_BUCKET_NAME || "test-bucket";
 
 // Generate a unique file ID
 const generateFileId = () => crypto.randomUUID();
@@ -30,7 +38,7 @@ const generateFileId = () => crypto.randomUUID();
 app.post(
   "/api/upload_url",
   async (
-    req: Request<{}, {}, UploadUrlRequest>,
+    req: Request<{}, {}, UploadUrlRequestBody>,
     res: Response<ApiResponse<UploadUrlResponse>>
   ) => {
     const { filename } = req.body;
@@ -42,8 +50,7 @@ app.post(
     }
 
     const fileId = generateFileId();
-    // TODO: keyちゃんとする
-    const key = `uploads/${fileId}/${filename}`;
+    const key = `${filename}-${fileId}`;
 
     const uploadUrl = await getSignedUrl(
       s3,
