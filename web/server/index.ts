@@ -2,10 +2,9 @@
 type ApiResponse<T> = { success: boolean; data: T | null; error?: string };
 type UploadUrlRequestBody = { filename: string };
 type UploadUrlResponse = { uploadUrl: string; fileId: string };
-type PreviewUrlRequest = { fileId: string };
+type PreviewUrlRequestBody = { fileId: string };
 type PreviewUrlResponse = { previewUrl: string };
 
-// Express + TypeScript (web api)
 import express, { Request, Response } from "express";
 import {
   S3Client,
@@ -16,6 +15,11 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import * as crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+
+// 簡易的なDBとしてメモリに保存
+const uploadFiles: {
+  [fileId: string]: { filename: string };
+} = {};
 
 const app = express();
 const port = 3000;
@@ -47,8 +51,11 @@ app.use(express.json());
 
 // Generate a unique file ID
 const generateFileId = () => crypto.randomUUID();
+const generateKey = (fileId: string, filename: string) =>
+  `${fileId}-${filename}`;
 
 // API to get upload URL
+// NOTE: 本来は認証が必要
 app.post(
   "/api/get_upload_url",
   async (
@@ -64,13 +71,14 @@ app.post(
     }
 
     const fileId = generateFileId();
-    const key = `${fileId}-${filename}`;
+    // Save the filename to the in-memory DB
+    uploadFiles[fileId] = { filename };
 
     const uploadUrl = await getSignedUrl(
       s3,
       new PutObjectCommand({
         Bucket: BUCKET_NAME,
-        Key: key,
+        Key: generateKey(fileId, filename),
         ContentType: "application/octet-stream",
       })
     );
@@ -80,33 +88,40 @@ app.post(
 );
 
 // API to get preview URL
-// app.post("/api/get_preview_url", (req, res) => {
-//   const { fileId } = req.query;
-//   if (!fileId) {
-//     return res
-//       .status(400)
-//       .json({ success: false, data: null, error: "File ID is required" });
-//   }
+// NOTE: 本来は認証が必要
+app.post(
+  "/api/get_preview_url",
+  async (
+    req: Request<{}, {}, PreviewUrlRequestBody>,
+    res: Response<ApiResponse<PreviewUrlResponse>>
+  ) => {
+    const { fileId } = req.body;
+    if (!fileId) {
+      res
+        .status(400)
+        .json({ success: false, data: null, error: "File ID is required" });
+      return;
+    }
 
-//   const key = `uploads/${fileId}/`;
-
-//   const params = {
-//     Bucket: BUCKET_NAME,
-//     Key: key,
-//     Expires: 60, // URL valid for 60 seconds
-//   };
-
-//   try {
-//     const previewUrl = s3.getSignedUrl("getObject", params);
-//     res.json({ success: true, data: { previewUrl } });
-//   } catch (error) {
-//     res.status(500).json({
-//       success: false,
-//       data: null,
-//       error: "Error generating preview URL",
-//     });
-//   }
-// });
+    try {
+      // TODO: 有効期限を設定
+      const previewUrl = await getSignedUrl(
+        s3,
+        new GetObjectCommand({
+          Bucket: BUCKET_NAME,
+          Key: generateKey(fileId, uploadFiles[fileId].filename),
+        })
+      );
+      res.json({ success: true, data: { previewUrl } });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        data: null,
+        error: "Error generating preview URL",
+      });
+    }
+  }
+);
 
 app.get("/", (_req, res) => {
   res.sendFile(path.join(clientBuildPath, "index.html"));

@@ -52,9 +52,11 @@ const App: React.FC = () => {
 
     try {
       // Get preview URL
-      const response = await fetch(
-        `/api/preview_url?fileId=${encodeURIComponent(fileId)}`
-      );
+      const response = await fetch("/api/get_preview_url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileId }),
+      });
       const result: ApiResponse<PreviewUrlResponse> = await response.json();
 
       if (!result.success || !result.data) {
