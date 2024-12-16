@@ -1,10 +1,5 @@
 ```sh
 $ docker compose up -d
-$ curl -X POST "http://localhost:9002/2015-03-31/functions/function/invocations" \
--H "Content-Type: application/json" \
--d '{
-  "queryStringParameters": {
-    "key": "excel-preview-test.xlsx"
-  }
-}' | jq -r '.body' | base64 --decode > tmp/excel-preview-test.pdf
+$ (cd web && npm run build -w client && npm run start -w server)
+# http://localhost:3000 にアクセスして office ファイルをアップロードしてプレビューしてみる
 ```

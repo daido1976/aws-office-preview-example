@@ -1,6 +1,6 @@
 - ローカル版を作る
   - [x] lambda（コンテナイメージ+rie）+s3 minio で動くようにする
-  - web アプリを作る（client/server）
+  - [x] web アプリを作る（client/server）
   - s3 に pdf あればそれを返してない時だけ pdf 作るようにする
 - 実際の aws 環境版を作る
   - cf+lambda+s3 を aws のアカウント差し替えれば動くようにする
