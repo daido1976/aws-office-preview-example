@@ -1,35 +1,93 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+// Shared Types
+type ApiResponse<T> = { success: boolean; data: T | null; error?: string };
+type UploadUrlResponse = { uploadUrl: string; fileId: string };
+type PreviewUrlResponse = { previewUrl: string };
+import React, { useState } from "react";
 
-function App() {
-  const [count, setCount] = useState(0)
+const App: React.FC = () => {
+  const [file, setFile] = useState<File | null>(null);
+  const [fileId, setFileId] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files) {
+      setFile(event.target.files[0]);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!file) return;
+
+    try {
+      // Get upload URL and file ID
+      const response = await fetch("/api/get_upload_url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: file.name }),
+      });
+      const result: ApiResponse<UploadUrlResponse> = await response.json();
+
+      if (!result.success || !result.data) {
+        throw new Error(result.error || "Failed to get upload URL");
+      }
+
+      const { uploadUrl, fileId } = result.data;
+
+      // Upload file to S3
+      await fetch(uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": "application/pdf" },
+        body: file,
+      });
+
+      setFileId(fileId);
+      alert("File uploaded successfully!");
+    } catch (error) {
+      console.error("Error uploading file:", error);
+    }
+  };
+
+  const handlePreview = async () => {
+    if (!fileId) return;
+
+    try {
+      // Get preview URL
+      const response = await fetch(
+        `/api/preview_url?fileId=${encodeURIComponent(fileId)}`
+      );
+      const result: ApiResponse<PreviewUrlResponse> = await response.json();
+
+      if (!result.success || !result.data) {
+        throw new Error(result.error || "Failed to get preview URL");
+      }
+
+      setPreviewUrl(result.data.previewUrl);
+    } catch (error) {
+      console.error("Error getting preview URL:", error);
+    }
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+    <div>
+      <h1>File Upload and Preview</h1>
 
-export default App
+      <input type="file" onChange={handleFileChange} />
+      <button onClick={handleUpload} disabled={!file}>
+        Upload File
+      </button>
+
+      {fileId && <button onClick={handlePreview}>Preview File</button>}
+
+      {previewUrl && (
+        <iframe
+          src={previewUrl}
+          width="100%"
+          height="500px"
+          title="File Preview"
+        />
+      )}
+    </div>
+  );
+};
+
+export default App;

@@ -50,7 +50,7 @@ const generateFileId = () => crypto.randomUUID();
 
 // API to get upload URL
 app.post(
-  "/api/upload_url",
+  "/api/get_upload_url",
   async (
     req: Request<{}, {}, UploadUrlRequestBody>,
     res: Response<ApiResponse<UploadUrlResponse>>
@@ -64,7 +64,7 @@ app.post(
     }
 
     const fileId = generateFileId();
-    const key = `${filename}-${fileId}`;
+    const key = `${fileId}-${filename}`;
 
     const uploadUrl = await getSignedUrl(
       s3,
@@ -80,7 +80,7 @@ app.post(
 );
 
 // API to get preview URL
-// app.get("/api/preview_url", (req, res) => {
+// app.post("/api/get_preview_url", (req, res) => {
 //   const { fileId } = req.query;
 //   if (!fileId) {
 //     return res
