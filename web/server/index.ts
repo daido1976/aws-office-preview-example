@@ -104,14 +104,11 @@ app.post(
     }
 
     try {
-      // TODO: 有効期限を設定
-      const previewUrl = await getSignedUrl(
-        s3,
-        new GetObjectCommand({
-          Bucket: BUCKET_NAME,
-          Key: generateKey(fileId, uploadFiles[fileId].filename),
-        })
-      );
+      const lambdaFunctionUrl = "http://localhost:8080";
+      const previewUrl = `${lambdaFunctionUrl}?key=${generateKey(
+        fileId,
+        uploadFiles[fileId].filename
+      )}`;
       res.json({ success: true, data: { previewUrl } });
     } catch (error) {
       res.status(500).json({
