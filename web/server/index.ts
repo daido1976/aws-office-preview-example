@@ -6,11 +6,7 @@ type PreviewUrlRequestBody = { fileId: string };
 type PreviewUrlResponse = { previewUrl: string };
 
 import express, { Request, Response } from "express";
-import {
-  S3Client,
-  GetObjectCommand,
-  PutObjectCommand,
-} from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import * as crypto from "node:crypto";
 import path from "node:path";
