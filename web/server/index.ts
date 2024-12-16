@@ -13,7 +13,9 @@ import {
   PutObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import * as crypto from "crypto";
+import * as crypto from "node:crypto";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const app = express();
 const port = 3000;
@@ -30,6 +32,18 @@ const s3 = new S3Client({
 });
 
 const BUCKET_NAME = process.env.S3_BUCKET_NAME || "test-bucket";
+
+// SPA のビルドファイルディレクトリ
+const clientBuildPath = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "../client/dist"
+);
+
+// Static files のホスティング
+app.use(express.static(clientBuildPath));
+
+// JSON パーサーを有効化
+app.use(express.json());
 
 // Generate a unique file ID
 const generateFileId = () => crypto.randomUUID();
@@ -94,6 +108,10 @@ app.post(
 //   }
 // });
 
+app.get("/", (_req, res) => {
+  res.sendFile(path.join(clientBuildPath, "index.html"));
+});
+
 app.listen(port, () => {
-  console.log(`Web API listening on port ${port}`);
+  console.log(`express listening on http://localhost:${port}`);
 });
