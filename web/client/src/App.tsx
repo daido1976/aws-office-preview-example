@@ -73,7 +73,11 @@ const App: React.FC = () => {
     <div>
       <h1>File Upload and Preview</h1>
 
-      <input type="file" onChange={handleFileChange} />
+      <input
+        type="file"
+        accept=".xls, .xlsx, .doc, .docx, .ppt, .pptx"
+        onChange={handleFileChange}
+      />
       <button onClick={handleUpload} disabled={!file}>
         Upload File
       </button>
