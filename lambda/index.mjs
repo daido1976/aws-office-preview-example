@@ -3,6 +3,7 @@ import {
   S3Client,
   GetObjectCommand,
   PutObjectCommand,
+  HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 import { convertTo, canBeConvertedToPDF } from "@shelf/aws-lambda-libreoffice";
 import fs from "fs";
@@ -24,14 +25,43 @@ const s3 = new S3Client({
  * @returns {Promise<import('aws-lambda').APIGatewayProxyResultV2>}
  */
 export const handler = async (event) => {
-  console.log("hello from lambda");
   const bucketName = process.env.S3_BUCKET_NAME;
-  const objectKey = event.queryStringParameters?.key ?? "";
+  const objectKey = event.queryStringParameters?.key ?? ""; // e.g. sample.xlsx
+  const outputKey = `${path.parse(objectKey).name}.pdf`; // e.g. sample.pdf
   const tmpPath = process.env.HOME ?? "/tmp";
-  console.log("event", JSON.stringify(event));
-  console.log({ objectKey, bucketName, tmpPath });
+  console.debug(
+    JSON.stringify({ event, bucketName, objectKey, outputKey, tmpPath })
+  );
 
   try {
+    // 変換後のPDFファイルがすでに存在するか調べる
+    const headObjectParams = { Bucket: bucketName, Key: outputKey };
+    const headObjectCommand = new HeadObjectCommand(headObjectParams);
+    const headObjectData = await s3.send(headObjectCommand).catch((err) => {
+      if (err.name !== "NotFound") {
+        console.error(err);
+      }
+    });
+
+    if (headObjectData) {
+      // ファイルが存在すればそれをそのままレスポンスとして返す
+      const getObjectParams = { Bucket: bucketName, Key: outputKey };
+      const getObjectCommand = new GetObjectCommand(getObjectParams);
+      const data = await s3.send(getObjectCommand);
+
+      if (data.Body) {
+        const pdfBuffer = await data.Body.transformToByteArray();
+        return {
+          statusCode: 200,
+          body: Buffer.from(pdfBuffer).toString("base64"),
+          isBase64Encoded: true,
+          headers: {
+            "Content-Type": "application/pdf",
+          },
+        };
+      }
+    }
+
     // S3からファイルをダウンロード
     const getObjectParams = { Bucket: bucketName, Key: objectKey };
     const getObjectCommand = new GetObjectCommand(getObjectParams);
@@ -56,7 +86,6 @@ export const handler = async (event) => {
     const outputFilePath = await convertTo(objectKey, "pdf");
 
     // 変換後のファイルをS3にアップロード
-    const outputKey = `${path.parse(objectKey).name}.pdf`;
     const putObjectParams = {
       Bucket: bucketName,
       Key: outputKey,
