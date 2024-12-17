@@ -30,6 +30,52 @@ export default function FileUploadPreview() {
     setShowPreview(false);
   };
 
+  const fetchUploadUrl = async (
+    filename: string
+  ): Promise<UploadUrlResponse> => {
+    const response = await fetch("/api/get_upload_url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filename }),
+    });
+    const result: ApiResponse<UploadUrlResponse> = await response.json();
+
+    if (!result.success || !result.data) {
+      throw new Error(result.error || "Failed to get upload URL");
+    }
+
+    return result.data;
+  };
+
+  const uploadFileToS3 = async (uploadUrl: string, file: File) => {
+    const response = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type },
+      body: file,
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to upload file");
+    }
+  };
+
+  const fetchPreviewUrl = async (
+    fileId: string
+  ): Promise<PreviewUrlResponse> => {
+    const response = await fetch("/api/get_preview_url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileId }),
+    });
+    const result: ApiResponse<PreviewUrlResponse> = await response.json();
+
+    if (!result.success || !result.data) {
+      throw new Error(result.error || "Failed to get preview URL");
+    }
+
+    return result.data;
+  };
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file || !isValidFile(file)) {
@@ -73,44 +119,16 @@ export default function FileUploadPreview() {
 
     try {
       // アップロードURLとfileIdの取得
-      const response = await fetch("/api/get_upload_url", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: file.name }),
-      });
-      const result: ApiResponse<UploadUrlResponse> = await response.json();
+      const { uploadUrl, fileId } = await fetchUploadUrl(file.name);
 
-      if (!result.success || !result.data) {
-        throw new Error(result.error || "Failed to get upload URL");
-      }
-
-      const { uploadUrl, fileId } = result.data;
-
-      // ファイルをそのままfetchで送信
-      const uploadResponse = await fetch(uploadUrl, {
-        method: "PUT",
-        headers: { "Content-Type": file.type },
-        body: file, // Fileオブジェクトをそのまま送信
-      });
-
-      if (!uploadResponse.ok) throw new Error("Failed to upload file");
-
+      // ファイルをS3にアップロード
+      await uploadFileToS3(uploadUrl, file);
       setFileId(fileId);
 
-      // 自動でプレビューURLを取得
-      const previewResponse = await fetch("/api/get_preview_url", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileId }),
-      });
-      const previewResult: ApiResponse<PreviewUrlResponse> =
-        await previewResponse.json();
+      // プレビューURLを取得
+      const { previewUrl } = await fetchPreviewUrl(fileId);
 
-      if (!previewResult.success || !previewResult.data) {
-        throw new Error(previewResult.error || "Failed to get preview URL");
-      }
-
-      setPreviewUrl(previewResult.data.previewUrl);
+      setPreviewUrl(previewUrl);
       setShowPreview(true);
     } catch (error) {
       console.error("Error uploading file:", error);
@@ -124,19 +142,8 @@ export default function FileUploadPreview() {
     if (!fileId) return;
 
     try {
-      // Get preview URL
-      const response = await fetch("/api/get_preview_url", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileId }),
-      });
-      const result: ApiResponse<PreviewUrlResponse> = await response.json();
-
-      if (!result.success || !result.data) {
-        throw new Error(result.error || "Failed to get preview URL");
-      }
-
-      setPreviewUrl(result.data.previewUrl);
+      const { previewUrl } = await fetchPreviewUrl(fileId);
+      setPreviewUrl(previewUrl);
       setShowPreview(true);
     } catch (error) {
       console.error("Error getting preview URL:", error);
