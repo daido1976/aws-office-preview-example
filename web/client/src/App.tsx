@@ -125,11 +125,12 @@ export default function FileUploadPreview() {
     try {
       const { uploadUrl, fileId } = await fetchUploadUrl(file.name);
       await uploadFileToS3(uploadUrl, file);
-      const { previewUrl } = await fetchPreviewUrl(fileId);
+      // アップロードが成功したら、fileIdをセットする
+      setFileState((prev) => ({ ...prev, fileId }));
 
+      const { previewUrl } = await fetchPreviewUrl(fileId);
       setFileState((prev) => ({
         ...prev,
-        fileId,
         previewUrl,
         showPreview: true,
       }));
