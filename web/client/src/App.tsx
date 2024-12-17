@@ -1,9 +1,10 @@
 import React, { useState, useRef } from "react";
+import {
+  ApiResponse,
+  PreviewUrlResponse,
+  UploadUrlResponse,
+} from "../../server";
 import styles from "./App.module.css";
-
-type ApiResponse<T> = { success: boolean; data: T | null; error?: string };
-type UploadUrlResponse = { uploadUrl: string; fileId: string };
-type PreviewUrlResponse = { previewUrl: string };
 
 export default function FileUploadPreview() {
   const [fileState, setFileState] = useState<{

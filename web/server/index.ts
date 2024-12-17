@@ -1,9 +1,13 @@
-// Shared Types
-type ApiResponse<T> = { success: boolean; data: T | null; error?: string };
-type UploadUrlRequestBody = { filename: string };
-type UploadUrlResponse = { uploadUrl: string; fileId: string };
-type PreviewUrlRequestBody = { fileId: string };
-type PreviewUrlResponse = { previewUrl: string };
+// TODO: 共通の型定義は shared package に切り出す
+export type ApiResponse<T> = {
+  success: boolean;
+  data: T | null;
+  error?: string;
+};
+export type UploadUrlRequestBody = { filename: string };
+export type UploadUrlResponse = { uploadUrl: string; fileId: string };
+export type PreviewUrlRequestBody = { fileId: string };
+export type PreviewUrlResponse = { previewUrl: string };
 
 import express, { Request, Response } from "express";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
@@ -33,8 +37,6 @@ const clientBuildPath = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "../client/dist"
 );
-
-// Static files のホスティング
 app.use(express.static(clientBuildPath));
 
 // JSON パーサーを有効化
