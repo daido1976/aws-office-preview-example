@@ -12,11 +12,6 @@ import * as crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-// 簡易的なDBとしてメモリに保存
-const uploadFiles: {
-  [fileId: string]: { filename: string };
-} = {};
-
 const app = express();
 const port = 3000;
 
@@ -45,10 +40,27 @@ app.use(express.static(clientBuildPath));
 // JSON パーサーを有効化
 app.use(express.json());
 
-// Generate a unique file ID
 const generateFileId = () => crypto.randomUUID();
-const generateKey = (fileId: string, filename: string) =>
-  `${fileId}-${filename}`;
+const generateKey = (fileId: string, filename: string): string => {
+  const extensionMatch = filename.match(/\.[^.]+$/);
+  const extension = extensionMatch ? extensionMatch[0] : "";
+  return `${fileId}${extension}`;
+};
+
+// 簡易的なDBとしてメモリに保存（単一ファイルのみ対応）
+const uploadFileStore = (() => {
+  let uploadFile: { fileId: string; filename: string } | null = null;
+
+  return {
+    set: (fileId: string, filename: string) => {
+      uploadFile = { fileId, filename };
+    },
+
+    getBy: (fileId: string) => {
+      return uploadFile?.fileId === fileId ? uploadFile : null;
+    },
+  };
+})();
 
 // API to get upload URL
 // NOTE: 本来は認証が必要
@@ -66,9 +78,9 @@ app.post(
       return;
     }
 
+    // Save the file info to the in-memory DB
     const fileId = generateFileId();
-    // Save the filename to the in-memory DB
-    uploadFiles[fileId] = { filename };
+    uploadFileStore.set(fileId, filename);
 
     const uploadUrl = await getSignedUrl(
       s3,
@@ -98,21 +110,19 @@ app.post(
         .json({ success: false, data: null, error: "File ID is required" });
       return;
     }
-
-    try {
-      const lambdaFunctionUrl = "http://localhost:8080";
-      const previewUrl = `${lambdaFunctionUrl}?key=${generateKey(
-        fileId,
-        uploadFiles[fileId].filename
-      )}`;
-      res.json({ success: true, data: { previewUrl } });
-    } catch (error) {
-      res.status(500).json({
-        success: false,
-        data: null,
-        error: "Error generating preview URL",
-      });
+    const uploadFile = uploadFileStore.getBy(fileId);
+    if (!uploadFile) {
+      res
+        .status(404)
+        .json({ success: false, data: null, error: "File not found" });
+      return;
     }
+    const lambdaFunctionUrl = "http://localhost:8080";
+    const previewUrl = `${lambdaFunctionUrl}?key=${generateKey(
+      uploadFile.fileId,
+      uploadFile.filename
+    )}`;
+    res.json({ success: true, data: { previewUrl } });
   }
 );
 
