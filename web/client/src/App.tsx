@@ -41,6 +41,9 @@ export default function FileUploadPreview() {
     }
 
     setFile(file);
+    setFileId(null);
+    setPreviewUrl(null);
+    setShowPreview(false);
     setError(null);
   };
 
@@ -62,6 +65,9 @@ export default function FileUploadPreview() {
     }
 
     setFile(file);
+    setFileId(null);
+    setPreviewUrl(null);
+    setShowPreview(false);
     setError(null);
   };
 
