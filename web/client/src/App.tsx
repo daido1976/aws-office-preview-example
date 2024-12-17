@@ -11,6 +11,7 @@ export default function FileUploadPreview() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPreview, setShowPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const allowedExtensions = [".xls", ".xlsx", ".doc", ".docx", ".ppt", ".pptx"];
@@ -26,6 +27,7 @@ export default function FileUploadPreview() {
     setFile(file);
     setFileId(null);
     setPreviewUrl(null);
+    setShowPreview(false);
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,18 +86,18 @@ export default function FileUploadPreview() {
 
       const { uploadUrl, fileId } = result.data;
 
-      // ファイルをS3にアップロード
+      // ファイルをそのままfetchで送信
       const uploadResponse = await fetch(uploadUrl, {
         method: "PUT",
         headers: { "Content-Type": file.type },
-        body: file,
+        body: file, // Fileオブジェクトをそのまま送信
       });
 
       if (!uploadResponse.ok) throw new Error("Failed to upload file");
 
       setFileId(fileId);
 
-      // アップロード成功したらプレビューURLを取得
+      // 自動でプレビューURLを取得
       const previewResponse = await fetch("/api/get_preview_url", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -109,12 +111,41 @@ export default function FileUploadPreview() {
       }
 
       setPreviewUrl(previewResult.data.previewUrl);
+      setShowPreview(true);
     } catch (error) {
       console.error("Error uploading file:", error);
       setError("Failed to upload file. Please try again.");
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const handlePreview = async () => {
+    if (!fileId) return;
+
+    try {
+      // Get preview URL
+      const response = await fetch("/api/get_preview_url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileId }),
+      });
+      const result: ApiResponse<PreviewUrlResponse> = await response.json();
+
+      if (!result.success || !result.data) {
+        throw new Error(result.error || "Failed to get preview URL");
+      }
+
+      setPreviewUrl(result.data.previewUrl);
+      setShowPreview(true);
+    } catch (error) {
+      console.error("Error getting preview URL:", error);
+      setError("Failed to get preview URL. Please try again.");
+    }
+  };
+
+  const handleClosePreview = () => {
+    setShowPreview(false);
   };
 
   return (
@@ -163,13 +194,22 @@ export default function FileUploadPreview() {
           </button>
         )}
 
+        {fileId && !showPreview && (
+          <button onClick={handlePreview} className={styles.button}>
+            Preview File
+          </button>
+        )}
+
         {error && <p className={styles.error}>{error}</p>}
       </div>
 
-      {previewUrl && (
+      {showPreview && previewUrl && (
         <div className={styles.previewArea}>
           <div className={styles.previewHeader}>
             <h2>File Preview</h2>
+            <button onClick={handleClosePreview} className={styles.closeButton}>
+              Close
+            </button>
           </div>
           <iframe
             src={previewUrl}
