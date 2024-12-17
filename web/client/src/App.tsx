@@ -14,9 +14,29 @@ export default function FileUploadPreview() {
   const [showPreview, setShowPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const allowedExtensions = [".xls", ".xlsx", ".doc", ".docx", ".ppt", ".pptx"];
+
+  const isValidFile = (file: File): boolean => {
+    const fileExtension = file.name
+      .slice(file.name.lastIndexOf("."))
+      .toLowerCase();
+    return allowedExtensions.includes(fileExtension);
+  };
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files[0]) {
-      setFile(event.target.files[0]);
+      const file = event.target.files[0];
+      if (!isValidFile(file)) {
+        setError(
+          "Invalid file type. Only .xls, .xlsx, .doc, .docx, .ppt, .pptx are allowed."
+        );
+        setFile(null);
+        setFileId(null);
+        setPreviewUrl(null);
+        setShowPreview(false);
+        return;
+      }
+      setFile(file);
       setFileId(null);
       setPreviewUrl(null);
       setShowPreview(false);
@@ -33,7 +53,18 @@ export default function FileUploadPreview() {
     event.preventDefault();
     event.stopPropagation();
     if (event.dataTransfer.files && event.dataTransfer.files[0]) {
-      setFile(event.dataTransfer.files[0]);
+      const file = event.dataTransfer.files[0];
+      if (!isValidFile(file)) {
+        setError(
+          "Invalid file type. Only .xls, .xlsx, .doc, .docx, .ppt, .pptx are allowed."
+        );
+        setFile(null);
+        setFileId(null);
+        setPreviewUrl(null);
+        setShowPreview(false);
+        return;
+      }
+      setFile(file);
       setFileId(null);
       setPreviewUrl(null);
       setShowPreview(false);
@@ -134,7 +165,7 @@ export default function FileUploadPreview() {
               <UploadIcon />
               <p>Drag & drop a file here, or click to select</p>
               <p className={styles.supportedFormats}>
-                (Supported formats: .xls, .xlsx, .doc, .docx, .ppt, .pptx)
+                (Supported formats: {allowedExtensions.join(", ")})
               </p>
             </>
           )}
@@ -143,7 +174,7 @@ export default function FileUploadPreview() {
           type="file"
           ref={fileInputRef}
           onChange={handleFileChange}
-          accept=".xls,.xlsx,.doc,.docx,.ppt,.pptx"
+          accept={allowedExtensions.join(",")}
           style={{ display: "none" }}
         />
 
