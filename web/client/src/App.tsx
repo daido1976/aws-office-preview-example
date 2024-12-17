@@ -10,7 +10,6 @@ export default function FileUploadPreview() {
   const [fileId, setFileId] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -46,11 +45,10 @@ export default function FileUploadPreview() {
     if (!file) return;
 
     setIsUploading(true);
-    setUploadProgress(0);
     setError(null);
 
     try {
-      // Get upload URL and file ID
+      // アップロードURLとfileIdの取得
       const response = await fetch("/api/get_upload_url", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -64,46 +62,24 @@ export default function FileUploadPreview() {
 
       const { uploadUrl, fileId } = result.data;
 
-      // Upload file to S3 using fetch with progress
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        if (e.target && e.target.result) {
-          const fileContent = e.target.result as ArrayBuffer;
-          try {
-            const response = await fetch(uploadUrl, {
-              method: "PUT",
-              headers: { "Content-Type": file.type },
-              body: fileContent,
-            });
+      // ファイルをそのままfetchで送信
+      const uploadResponse = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file, // Fileオブジェクトをそのまま送信
+      });
 
-            if (response.ok) {
-              setFileId(fileId);
-              setIsUploading(false);
-              setUploadProgress(100);
-              setPreviewUrl(null);
-              setShowPreview(false);
-            } else {
-              throw new Error("Upload failed");
-            }
-          } catch (error) {
-            console.error("Error uploading file:", error);
-            setError("Failed to upload file. Please try again.");
-            setIsUploading(false);
-          }
-        }
-      };
-
-      reader.onprogress = (e) => {
-        if (e.lengthComputable) {
-          const percentComplete = (e.loaded / e.total) * 100;
-          setUploadProgress(percentComplete);
-        }
-      };
-
-      reader.readAsArrayBuffer(file);
+      if (uploadResponse.ok) {
+        setFileId(fileId);
+        setIsUploading(false);
+        setPreviewUrl(null);
+        setShowPreview(false);
+      } else {
+        throw new Error("Upload failed");
+      }
     } catch (error) {
-      console.error("Error getting upload URL:", error);
-      setError("Failed to get upload URL. Please try again.");
+      console.error("Error uploading file:", error);
+      setError("Failed to upload file. Please try again.");
       setIsUploading(false);
     }
   };
@@ -179,15 +155,6 @@ export default function FileUploadPreview() {
           >
             {isUploading ? "Uploading..." : "Upload File"}
           </button>
-        )}
-
-        {isUploading && (
-          <div className={styles.progressBar}>
-            <div
-              className={styles.progressFill}
-              style={{ width: `${uploadProgress}%` }}
-            ></div>
-          </div>
         )}
 
         {fileId && !showPreview && (

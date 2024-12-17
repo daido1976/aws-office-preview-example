@@ -8,7 +8,6 @@
   --color-error: #dc3545;
   --color-success: #28a745;
   --color-hover: #f8f9fa;
-  --color-progress-bg: #e9ecef;
   --color-close-button: #d1d5db;
   --color-close-button-hover: #9ca3af;
 }
@@ -95,20 +94,6 @@
 .button:disabled {
   background-color: var(--color-secondary);
   cursor: not-allowed;
-}
-
-.progressBar {
-  height: 4px;
-  background-color: var(--color-progress-bg);
-  border-radius: 2px;
-  margin-top: 1rem;
-  overflow: hidden;
-}
-
-.progressFill {
-  height: 100%;
-  background-color: var(--color-primary);
-  transition: width 0.3s ease;
 }
 
 .error {
