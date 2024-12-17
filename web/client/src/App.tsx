@@ -93,11 +93,25 @@ export default function FileUploadPreview() {
         body: file, // Fileオブジェクトをそのまま送信
       });
 
-      if (uploadResponse.ok) {
-        setFileId(fileId);
-      } else {
-        throw new Error("Failed to upload file");
+      if (!uploadResponse.ok) throw new Error("Failed to upload file");
+
+      setFileId(fileId);
+
+      // 自動でプレビューURLを取得
+      const previewResponse = await fetch("/api/get_preview_url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileId }),
+      });
+      const previewResult: ApiResponse<PreviewUrlResponse> =
+        await previewResponse.json();
+
+      if (!previewResult.success || !previewResult.data) {
+        throw new Error(previewResult.error || "Failed to get preview URL");
       }
+
+      setPreviewUrl(previewResult.data.previewUrl);
+      setShowPreview(true);
     } catch (error) {
       console.error("Error uploading file:", error);
       setError("Failed to upload file. Please try again.");
