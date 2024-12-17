@@ -136,7 +136,7 @@ export default function FileUploadPreview() {
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>File Upload and Preview</h1>
+      <h1 className={styles.title}>Office File Upload and Preview</h1>
 
       <div className={styles.uploadArea}>
         <div
