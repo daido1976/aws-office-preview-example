@@ -156,9 +156,9 @@ export default function FileUploadPreview() {
           ) : (
             <>
               <UploadIcon />
-              <p>ドラッグ＆ドロップ、またはクリックしてファイルを選択</p>
+              <p>Drag & drop a file here, or click to select</p>
               <p className={styles.supportedFormats}>
-                (対応形式: .xls, .xlsx, .doc, .docx, .ppt, .pptx)
+                (Supported formats: .xls, .xlsx, .doc, .docx, .ppt, .pptx)
               </p>
             </>
           )}
@@ -177,7 +177,7 @@ export default function FileUploadPreview() {
             disabled={isUploading}
             className={styles.button}
           >
-            {isUploading ? "アップロード中..." : "ファイルをアップロード"}
+            {isUploading ? "Uploading..." : "Upload File"}
           </button>
         )}
 
@@ -192,7 +192,7 @@ export default function FileUploadPreview() {
 
         {fileId && !showPreview && (
           <button onClick={handlePreview} className={styles.button}>
-            ファイルをプレビュー
+            Preview File
           </button>
         )}
 
@@ -202,9 +202,9 @@ export default function FileUploadPreview() {
       {showPreview && previewUrl && (
         <div className={styles.previewArea}>
           <div className={styles.previewHeader}>
-            <h2>ファイルプレビュー</h2>
+            <h2>File Preview</h2>
             <button onClick={handleClosePreview} className={styles.closeButton}>
-              閉じる
+              Close
             </button>
           </div>
           <iframe
