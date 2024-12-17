@@ -17,7 +17,6 @@ export default function FileUploadPreview() {
     previewUrl: null,
     showPreview: false,
   });
-  const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -121,7 +120,6 @@ export default function FileUploadPreview() {
     const { file } = fileState;
     if (!file) return;
 
-    setIsUploading(true);
     setError(null);
 
     try {
@@ -138,8 +136,6 @@ export default function FileUploadPreview() {
     } catch (error) {
       console.error("Error uploading file:", error);
       setError("Failed to upload file. Please try again.");
-    } finally {
-      setIsUploading(false);
     }
   };
 
@@ -192,12 +188,8 @@ export default function FileUploadPreview() {
         />
 
         {fileState.file && !fileState.fileId && (
-          <button
-            onClick={handleUpload}
-            disabled={isUploading}
-            className={styles.button}
-          >
-            {isUploading ? "Uploading..." : "Upload File"}
+          <button onClick={handleUpload} className={styles.button}>
+            Upload File
           </button>
         )}
 
