@@ -23,25 +23,25 @@ export default function FileUploadPreview() {
     return allowedExtensions.includes(fileExtension);
   };
 
+  const resetFileState = () => {
+    setFile(null);
+    setFileId(null);
+    setPreviewUrl(null);
+    setShowPreview(false);
+  };
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files[0]) {
-      const file = event.target.files[0];
-      if (!isValidFile(file)) {
-        setError(
-          "Invalid file type. Only .xls, .xlsx, .doc, .docx, .ppt, .pptx are allowed."
-        );
-        setFile(null);
-        setFileId(null);
-        setPreviewUrl(null);
-        setShowPreview(false);
-        return;
-      }
-      setFile(file);
-      setFileId(null);
-      setPreviewUrl(null);
-      setShowPreview(false);
-      setError(null);
+    const file = event.target.files?.[0];
+    if (!file || !isValidFile(file)) {
+      setError(
+        `Invalid file type. Only ${allowedExtensions.join(", ")} are allowed.`
+      );
+      resetFileState();
+      return;
     }
+
+    setFile(file);
+    setError(null);
   };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
@@ -52,24 +52,17 @@ export default function FileUploadPreview() {
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     event.stopPropagation();
-    if (event.dataTransfer.files && event.dataTransfer.files[0]) {
-      const file = event.dataTransfer.files[0];
-      if (!isValidFile(file)) {
-        setError(
-          "Invalid file type. Only .xls, .xlsx, .doc, .docx, .ppt, .pptx are allowed."
-        );
-        setFile(null);
-        setFileId(null);
-        setPreviewUrl(null);
-        setShowPreview(false);
-        return;
-      }
-      setFile(file);
-      setFileId(null);
-      setPreviewUrl(null);
-      setShowPreview(false);
-      setError(null);
+    const file = event.dataTransfer.files?.[0];
+    if (!file || !isValidFile(file)) {
+      setError(
+        `Invalid file type. Only ${allowedExtensions.join(", ")} are allowed.`
+      );
+      resetFileState();
+      return;
     }
+
+    setFile(file);
+    setError(null);
   };
 
   const handleUpload = async () => {
