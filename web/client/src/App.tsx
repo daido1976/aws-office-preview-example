@@ -6,16 +6,24 @@ type UploadUrlResponse = { uploadUrl: string; fileId: string };
 type PreviewUrlResponse = { previewUrl: string };
 
 export default function FileUploadPreview() {
-  const [file, setFile] = useState<File | null>(null);
-  const [fileId, setFileId] = useState<string | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [fileState, setFileState] = useState<{
+    file: File | null;
+    fileId: string | null;
+    previewUrl: string | null;
+    showPreview: boolean;
+  }>({
+    file: null,
+    fileId: null,
+    previewUrl: null,
+    showPreview: false,
+  });
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showPreview, setShowPreview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const allowedExtensions = [".xls", ".xlsx", ".doc", ".docx", ".ppt", ".pptx"];
 
+  // ファイル拡張子の検証
   const isValidFile = (file: File): boolean => {
     const fileExtension = file.name
       .slice(file.name.lastIndexOf("."))
@@ -23,13 +31,31 @@ export default function FileUploadPreview() {
     return allowedExtensions.includes(fileExtension);
   };
 
-  const refreshFileState = (file: File | null = null) => {
-    setFile(file);
-    setFileId(null);
-    setPreviewUrl(null);
-    setShowPreview(false);
+  // ファイル選択時/ドロップ時の共通処理
+  const handleFileSelection = (selectedFile: File | null) => {
+    if (!selectedFile || !isValidFile(selectedFile)) {
+      setError(
+        `Invalid file type. Only ${allowedExtensions.join(", ")} are allowed.`
+      );
+      setFileState({
+        file: null,
+        fileId: null,
+        previewUrl: null,
+        showPreview: false,
+      });
+      return;
+    }
+
+    setError(null);
+    setFileState({
+      file: selectedFile,
+      fileId: null,
+      previewUrl: null,
+      showPreview: false,
+    });
   };
 
+  // アップロードURL取得
   const fetchUploadUrl = async (
     filename: string
   ): Promise<UploadUrlResponse> => {
@@ -47,6 +73,7 @@ export default function FileUploadPreview() {
     return result.data;
   };
 
+  // ファイルをS3へアップロード
   const uploadFileToS3 = async (uploadUrl: string, file: File) => {
     const response = await fetch(uploadUrl, {
       method: "PUT",
@@ -59,6 +86,7 @@ export default function FileUploadPreview() {
     }
   };
 
+  // プレビューURL取得
   const fetchPreviewUrl = async (
     fileId: string
   ): Promise<PreviewUrlResponse> => {
@@ -77,59 +105,36 @@ export default function FileUploadPreview() {
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !isValidFile(file)) {
-      setError(
-        `Invalid file type. Only ${allowedExtensions.join(", ")} are allowed.`
-      );
-      refreshFileState();
-      return;
-    }
-
-    refreshFileState(file);
-    setError(null);
+    handleFileSelection(event.target.files?.[0] || null);
   };
 
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
-    event.stopPropagation();
   };
 
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
-    event.stopPropagation();
-    const file = event.dataTransfer.files?.[0];
-    if (!file || !isValidFile(file)) {
-      setError(
-        `Invalid file type. Only ${allowedExtensions.join(", ")} are allowed.`
-      );
-      refreshFileState();
-      return;
-    }
-
-    refreshFileState(file);
-    setError(null);
+    handleFileSelection(event.dataTransfer.files?.[0] || null);
   };
 
   const handleUpload = async () => {
+    const { file } = fileState;
     if (!file) return;
 
     setIsUploading(true);
     setError(null);
 
     try {
-      // アップロードURLとfileIdの取得
       const { uploadUrl, fileId } = await fetchUploadUrl(file.name);
-
-      // ファイルをS3にアップロード
       await uploadFileToS3(uploadUrl, file);
-      setFileId(fileId);
-
-      // プレビューURLを取得
       const { previewUrl } = await fetchPreviewUrl(fileId);
 
-      setPreviewUrl(previewUrl);
-      setShowPreview(true);
+      setFileState((prev) => ({
+        ...prev,
+        fileId,
+        previewUrl,
+        showPreview: true,
+      }));
     } catch (error) {
       console.error("Error uploading file:", error);
       setError("Failed to upload file. Please try again.");
@@ -139,20 +144,15 @@ export default function FileUploadPreview() {
   };
 
   const handlePreview = async () => {
-    if (!fileId) return;
+    if (!fileState.fileId) return;
 
     try {
-      const { previewUrl } = await fetchPreviewUrl(fileId);
-      setPreviewUrl(previewUrl);
-      setShowPreview(true);
+      const { previewUrl } = await fetchPreviewUrl(fileState.fileId);
+      setFileState((prev) => ({ ...prev, previewUrl, showPreview: true }));
     } catch (error) {
       console.error("Error getting preview URL:", error);
       setError("Failed to get preview URL. Please try again.");
     }
-  };
-
-  const handleClosePreview = () => {
-    setShowPreview(false);
   };
 
   return (
@@ -166,10 +166,10 @@ export default function FileUploadPreview() {
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
         >
-          {file ? (
+          {fileState.file ? (
             <div className={styles.fileInfo}>
               <FileIcon />
-              <span>{file.name}</span>
+              <span>{fileState.file.name}</span>
             </div>
           ) : (
             <>
@@ -191,7 +191,7 @@ export default function FileUploadPreview() {
           style={{ display: "none" }}
         />
 
-        {file && !fileId && (
+        {fileState.file && !fileState.fileId && (
           <button
             onClick={handleUpload}
             disabled={isUploading}
@@ -201,7 +201,7 @@ export default function FileUploadPreview() {
           </button>
         )}
 
-        {fileId && !showPreview && (
+        {fileState.fileId && !fileState.showPreview && (
           <button onClick={handlePreview} className={styles.button}>
             Preview File
           </button>
@@ -210,16 +210,21 @@ export default function FileUploadPreview() {
         {error && <p className={styles.error}>{error}</p>}
       </div>
 
-      {showPreview && previewUrl && (
+      {fileState.showPreview && fileState.previewUrl && (
         <div className={styles.previewArea}>
           <div className={styles.previewHeader}>
             <h2>File Preview</h2>
-            <button onClick={handleClosePreview} className={styles.closeButton}>
+            <button
+              onClick={() =>
+                setFileState((prev) => ({ ...prev, showPreview: false }))
+              }
+              className={styles.closeButton}
+            >
               Close
             </button>
           </div>
           <iframe
-            src={previewUrl}
+            src={fileState.previewUrl}
             className={styles.preview}
             title="File Preview"
           />
