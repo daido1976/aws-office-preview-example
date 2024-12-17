@@ -34,7 +34,7 @@
 .dropzone {
   border: 2px dashed var(--color-border);
   border-radius: 4px;
-  padding: clamp(1rem, 5vw, 2rem);
+  padding: clamp(2rem, 7vw, 3rem);
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -52,8 +52,11 @@
 .icon {
   width: clamp(32px, 8vw, 48px);
   height: clamp(32px, 8vw, 48px);
-  margin-bottom: 1rem;
   color: var(--color-primary);
+}
+
+.uploadIcon {
+  margin-bottom: 0.5rem;
 }
 
 .fileInfo {
@@ -65,6 +68,7 @@
 .fileInfo span {
   margin-left: 0.5rem;
   font-weight: bold;
+  font-size: clamp(1rem, 2.7vw, 1.1rem);
 }
 
 .supportedFormats {
@@ -77,7 +81,7 @@
   display: block;
   width: 100%;
   padding: 0.75rem;
-  margin-top: 1rem;
+  margin-top: 1.5rem;
   background-color: var(--color-primary);
   color: var(--color-background);
   border: none;

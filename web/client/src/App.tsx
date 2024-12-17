@@ -152,7 +152,9 @@ export default function FileUploadPreview() {
             </div>
           ) : (
             <>
-              <UploadIcon />
+              <div className={styles.uploadIcon}>
+                <UploadIcon />
+              </div>
               <p>Drag & drop a file here, or click to select</p>
               <p className={styles.supportedFormats}>
                 (Supported formats: {allowedExtensions.join(", ")})
