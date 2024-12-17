@@ -95,15 +95,13 @@ export default function FileUploadPreview() {
 
       if (uploadResponse.ok) {
         setFileId(fileId);
-        setIsUploading(false);
-        setPreviewUrl(null);
-        setShowPreview(false);
       } else {
-        throw new Error("Upload failed");
+        throw new Error("Failed to upload file");
       }
     } catch (error) {
       console.error("Error uploading file:", error);
       setError("Failed to upload file. Please try again.");
+    } finally {
       setIsUploading(false);
     }
   };
@@ -112,7 +110,6 @@ export default function FileUploadPreview() {
     if (!fileId) return;
 
     try {
-      setError(null);
       // Get preview URL
       const response = await fetch("/api/get_preview_url", {
         method: "POST",
