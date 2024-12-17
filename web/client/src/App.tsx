@@ -23,8 +23,8 @@ export default function FileUploadPreview() {
     return allowedExtensions.includes(fileExtension);
   };
 
-  const resetFileState = () => {
-    setFile(null);
+  const refreshFileState = (file: File | null = null) => {
+    setFile(file);
     setFileId(null);
     setPreviewUrl(null);
     setShowPreview(false);
@@ -36,14 +36,11 @@ export default function FileUploadPreview() {
       setError(
         `Invalid file type. Only ${allowedExtensions.join(", ")} are allowed.`
       );
-      resetFileState();
+      refreshFileState();
       return;
     }
 
-    setFile(file);
-    setFileId(null);
-    setPreviewUrl(null);
-    setShowPreview(false);
+    refreshFileState(file);
     setError(null);
   };
 
@@ -60,14 +57,11 @@ export default function FileUploadPreview() {
       setError(
         `Invalid file type. Only ${allowedExtensions.join(", ")} are allowed.`
       );
-      resetFileState();
+      refreshFileState();
       return;
     }
 
-    setFile(file);
-    setFileId(null);
-    setPreviewUrl(null);
-    setShowPreview(false);
+    refreshFileState(file);
     setError(null);
   };
 
