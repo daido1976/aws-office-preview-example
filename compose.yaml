@@ -35,8 +35,7 @@ services:
     environment:
       AWS_ACCESS_KEY_ID: admin
       AWS_SECRET_ACCESS_KEY: password
-    env_file:
-      - .env
+      S3_BUCKET_NAME: test-bucket
     depends_on:
       - s3-minio
 
