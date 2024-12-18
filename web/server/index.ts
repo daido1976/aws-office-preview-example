@@ -120,10 +120,11 @@ app.post(
       return;
     }
     const lambdaFunctionUrl = "http://localhost:8080";
+    // NOTE: #navpanes=0をつけることでChromeとEdgeでのPDFの表示をカスタマイズできる
     const previewUrl = `${lambdaFunctionUrl}?key=${generateKey(
       uploadFile.fileId,
       uploadFile.filename
-    )}`;
+    )}#navpanes=0`;
     res.json({ success: true, data: { previewUrl } });
   }
 );

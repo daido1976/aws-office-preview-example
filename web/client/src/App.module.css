@@ -13,7 +13,7 @@
 }
 
 .container {
-  max-width: 800px;
+  max-width: 820px;
   margin: 0 auto;
   padding: clamp(1rem, 5vw, 2rem);
   font-family: Arial, sans-serif;
@@ -138,7 +138,7 @@
 
 .preview {
   width: 100%;
-  height: clamp(300px, 80vh, 600px);
+  height: clamp(420px, 80vh, 720px);
   border: 1px solid var(--color-border);
   border-radius: 4px;
 }
