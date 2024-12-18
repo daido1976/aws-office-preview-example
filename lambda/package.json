@@ -10,7 +10,6 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@aws-sdk/s3-request-presigner": "^3.714.0",
     "@shelf/aws-lambda-libreoffice": "daido1976/aws-lambda-libreoffice#c36f6eb1aea73062c4b4171d434f7f7dec4c24e2"
   },
   "devDependencies": {
