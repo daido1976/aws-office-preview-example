@@ -6,6 +6,7 @@ import {
   HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 import { convertTo, canBeConvertedToPDF } from "@shelf/aws-lambda-libreoffice";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import fs from "fs";
 import path from "path";
 
@@ -44,22 +45,25 @@ export const handler = async (event) => {
     });
 
     if (headObjectData) {
-      // ファイルが存在すればそれをそのままレスポンスとして返す
-      const getObjectParams = { Bucket: bucketName, Key: outputKey };
-      const getObjectCommand = new GetObjectCommand(getObjectParams);
-      const data = await s3.send(getObjectCommand);
+      // ファイルが存在すればそのオブジェクトの署名付きURLを発行して返す
+      const signedUrl = await getSignedUrl(
+        s3,
+        new GetObjectCommand({
+          Bucket: bucketName,
+          Key: outputKey,
+        }),
+        { expiresIn: 60 * 5 } // URLの有効期限を5分に設定
+      );
 
-      if (data.Body) {
-        const pdfBuffer = await data.Body.transformToByteArray();
-        return {
-          statusCode: 200,
-          body: Buffer.from(pdfBuffer).toString("base64"),
-          isBase64Encoded: true,
-          headers: {
-            "Content-Type": "application/pdf",
-          },
-        };
-      }
+      console.log(`署名付きURL: ${signedUrl}`);
+
+      // 302リダイレクトレスポンスを返す
+      return {
+        statusCode: 302,
+        headers: {
+          Location: signedUrl, // リダイレクト先のURL
+        },
+      };
     }
 
     // S3からファイルをダウンロード
@@ -95,15 +99,23 @@ export const handler = async (event) => {
     const putObjectCommand = new PutObjectCommand(putObjectParams);
     await s3.send(putObjectCommand);
 
-    // PDFファイルをBase64エンコード
-    const pdfBuffer = fs.readFileSync(outputFilePath);
+    // 署名付きURLを生成
+    const signedUrl = await getSignedUrl(
+      s3,
+      new GetObjectCommand({
+        Bucket: bucketName,
+        Key: outputKey,
+      }),
+      { expiresIn: 60 * 5 } // URLの有効期限を5分に設定
+    );
 
+    console.log(`署名付きURL: ${signedUrl}`);
+
+    // 302リダイレクトレスポンスを返す
     return {
-      statusCode: 200,
-      body: pdfBuffer.toString("base64"),
-      isBase64Encoded: true,
+      statusCode: 302,
       headers: {
-        "Content-Type": "application/pdf",
+        Location: signedUrl, // リダイレクト先のURL
       },
     };
   } catch (error) {
