@@ -39,3 +39,6 @@ $ (cd web && npm i -ws && npm run build -w client && npm run start -w server)
 4. Open your browser and access the application at [http://localhost:3000](http://localhost:3000).
 
 You can verify functionality by uploading an office file and observing the preview output.
+
+https://github.com/user-attachments/assets/57826893-6078-4da8-8288-2f0132e2d3f5
+
