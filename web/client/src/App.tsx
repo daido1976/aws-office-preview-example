@@ -221,6 +221,12 @@ export default function FileUploadPreview() {
             src={fileState.previewUrl}
             className={styles.preview}
             title="File Preview"
+            onLoad={() =>
+              window.scrollTo({
+                top: document.body.scrollHeight,
+                behavior: "smooth",
+              })
+            }
           />
         </div>
       )}
