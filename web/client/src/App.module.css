@@ -108,6 +108,10 @@
 
 .previewArea {
   margin-top: 2rem;
+  width: clamp(360px, 90vw, 960px);
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .previewHeader {
@@ -138,7 +142,7 @@
 
 .preview {
   width: 100%;
-  height: clamp(300px, 80vh, 600px);
+  height: 900px;
   border: 1px solid var(--color-border);
   border-radius: 4px;
 }
