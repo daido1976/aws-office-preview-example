@@ -6,6 +6,7 @@ import {
   HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 import { convertTo, canBeConvertedToPDF } from "@shelf/aws-lambda-libreoffice";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import fs from "fs";
 import path from "path";
 
@@ -17,6 +18,19 @@ const s3 = new S3Client({
   credentials: {
     accessKeyId: "admin", // MinIOのルートユーザー名
     secretAccessKey: "password", // MinIOのルートパスワード
+  },
+});
+
+// TODO: 本番環境では不要な実装なので、endpointを共通化するか、クライアント生成関数や署名付きURL作成用の関数を作って隠蔽する
+// 署名付きURLを生成するためのS3クライアント（ローカル環境用）
+const s3ForSign = new S3Client({
+  // 署名付きURLはブラウザ=ホストマシンのローカル環境からアクセスするのでエンドポイントにlocalhostを指定する
+  endpoint: "http://localhost:9000",
+  region: "ap-northeast-1",
+  forcePathStyle: true,
+  credentials: {
+    accessKeyId: "admin",
+    secretAccessKey: "password",
   },
 });
 
@@ -44,22 +58,25 @@ export const handler = async (event) => {
     });
 
     if (headObjectData) {
-      // ファイルが存在すればそれをそのままレスポンスとして返す
-      const getObjectParams = { Bucket: bucketName, Key: outputKey };
-      const getObjectCommand = new GetObjectCommand(getObjectParams);
-      const data = await s3.send(getObjectCommand);
+      // ファイルが存在すればそのオブジェクトの署名付きURLを発行して返す
+      const signedUrl = await getSignedUrl(
+        s3ForSign,
+        new GetObjectCommand({
+          Bucket: bucketName,
+          Key: outputKey,
+        }),
+        { expiresIn: 60 * 5 }
+      );
 
-      if (data.Body) {
-        const pdfBuffer = await data.Body.transformToByteArray();
-        return {
-          statusCode: 200,
-          body: Buffer.from(pdfBuffer).toString("base64"),
-          isBase64Encoded: true,
-          headers: {
-            "Content-Type": "application/pdf",
-          },
-        };
-      }
+      console.debug({ signedUrl });
+
+      // 302リダイレクトレスポンスを返す
+      return {
+        statusCode: 302,
+        headers: {
+          Location: signedUrl,
+        },
+      };
     }
 
     // S3からファイルをダウンロード
@@ -95,15 +112,24 @@ export const handler = async (event) => {
     const putObjectCommand = new PutObjectCommand(putObjectParams);
     await s3.send(putObjectCommand);
 
-    // PDFファイルをBase64エンコード
-    const pdfBuffer = fs.readFileSync(outputFilePath);
+    // NOTE: Lambdaのレスポンスは6MBの上限があるので、ファイルサイズが大きい場合を考慮して署名付きURLを返す
+    // 署名付きURLを生成
+    const signedUrl = await getSignedUrl(
+      s3ForSign,
+      new GetObjectCommand({
+        Bucket: bucketName,
+        Key: outputKey,
+      }),
+      { expiresIn: 60 * 5 }
+    );
 
+    console.debug({ signedUrl });
+
+    // 302リダイレクトレスポンスを返す
     return {
-      statusCode: 200,
-      body: pdfBuffer.toString("base64"),
-      isBase64Encoded: true,
+      statusCode: 302,
       headers: {
-        "Content-Type": "application/pdf",
+        Location: signedUrl,
       },
     };
   } catch (error) {
