@@ -85,8 +85,6 @@ export const handler = async (event) => {
     fs.writeFileSync(inputFilePath, Buffer.from(officeFileBytes));
 
     // ファイルがPDFに変換可能か確認
-    // TODO: 許可するファイル形式の範囲が広すぎるので、適切なファイル形式のみを許可するように修正する（あとこのバリデーションは一番最初に行う方が良い）
-    // See. https://github.com/shelfio/aws-lambda-libreoffice/blob/v7.0.0/src/validations.ts
     if (!canBeConvertedToPDF(objectKey)) {
       throw new Error(`The file ${objectKey} cannot be converted to PDF`);
     }
