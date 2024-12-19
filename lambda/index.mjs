@@ -27,6 +27,7 @@ const s3 = new S3Client({
 export const handler = async (event) => {
   const bucketName = process.env.S3_BUCKET_NAME;
   const objectKey = event.queryStringParameters?.key ?? ""; // e.g. sample.xlsx
+  const fileExtension = path.extname(objectKey); // e.g. .xlsx
   const outputKey = `${path.parse(objectKey).name}.pdf`; // e.g. sample.pdf
   const tmpPath = process.env.HOME ?? "/tmp";
   console.debug(
@@ -82,8 +83,20 @@ export const handler = async (event) => {
       throw new Error(`ファイル ${objectKey} はPDFに変換できません`);
     }
 
-    // ファイルをPDFに変換
-    const outputFilePath = await convertTo(objectKey, "pdf");
+    // OfficeファイルをPDFに変換
+    const outFilters = {
+      ".xls": "calc_pdf_Export",
+      ".xlsx": "calc_pdf_Export",
+      ".doc": "writer_pdf_Export",
+      ".docx": "writer_pdf_Export",
+      ".ppt": "impress_pdf_Export",
+      ".pptx": "impress_pdf_Export",
+    };
+    const outputFilePath = await convertTo(
+      objectKey,
+      // ページ範囲を無制限にすると大きいファイルでは変換処理が終わらないので、25ページまでに制限（Slackの仕様を参考にしている）
+      `'pdf:${outFilters[fileExtension]}:{"PageRange":{"type":"string","value":"1-25"}}'`
+    );
 
     // 変換後のファイルをS3にアップロード
     const putObjectParams = {
