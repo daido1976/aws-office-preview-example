@@ -66,7 +66,7 @@ export default function FileUploadPreview() {
     });
     const result: ApiResponse<UploadUrlResponse> = await response.json();
 
-    if (!result.success || !result.data) {
+    if (!result.success) {
       throw new Error(result.error || "Failed to get upload URL");
     }
 
@@ -97,7 +97,7 @@ export default function FileUploadPreview() {
     });
     const result: ApiResponse<PreviewUrlResponse> = await response.json();
 
-    if (!result.success || !result.data) {
+    if (!result.success) {
       throw new Error(result.error || "Failed to get preview URL");
     }
 

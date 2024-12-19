@@ -68,9 +68,7 @@ app.post(
   ) => {
     const { filename } = req.body;
     if (!filename) {
-      res
-        .status(400)
-        .json({ success: false, data: null, error: "Filename is required" });
+      res.status(400).json({ success: false, error: "Filename is required" });
       return;
     }
 
@@ -100,16 +98,12 @@ app.post(
   ) => {
     const { fileId } = req.body;
     if (!fileId) {
-      res
-        .status(400)
-        .json({ success: false, data: null, error: "File ID is required" });
+      res.status(400).json({ success: false, error: "File ID is required" });
       return;
     }
     const uploadFile = uploadFileStore.getBy(fileId);
     if (!uploadFile) {
-      res
-        .status(404)
-        .json({ success: false, data: null, error: "File not found" });
+      res.status(404).json({ success: false, error: "File not found" });
       return;
     }
     const lambdaFunctionUrl = "http://localhost:8080";
