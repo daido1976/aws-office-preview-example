@@ -6,7 +6,7 @@ import {
 } from "../../server/types";
 import styles from "./App.module.css";
 
-export default function FileUploadPreview() {
+export default function App() {
   const [fileState, setFileState] = useState<{
     file: File | null;
     fileId: string | null;
