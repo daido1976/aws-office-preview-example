@@ -6,18 +6,13 @@ import {
   HeadObjectCommand,
 } from "@aws-sdk/client-s3";
 import { convertTo, canBeConvertedToPDF } from "@shelf/aws-lambda-libreoffice";
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 
-// TODO: あとで環境変数に移動
 const s3 = new S3Client({
-  endpoint: "http://s3-minio:9000", // MinIOのエンドポイント（ドメインは docker compose のサービス名）
+  endpoint: "http://s3-minio:9000", // MinIOのエンドポイント（ホスト名はdocker composeのサービス名）
   region: "ap-northeast-1", // MinIOでは任意の値でOK
   forcePathStyle: true, // パススタイルを有効化
-  credentials: {
-    accessKeyId: "admin", // MinIOのルートユーザー名
-    secretAccessKey: "password", // MinIOのルートパスワード
-  },
 });
 
 /**
@@ -36,22 +31,31 @@ export const handler = async (event) => {
 
   try {
     // 変換後のPDFファイルがすでに存在するか調べる
-    const headObjectParams = { Bucket: bucketName, Key: outputKey };
-    const headObjectCommand = new HeadObjectCommand(headObjectParams);
-    const headObjectData = await s3.send(headObjectCommand).catch((err) => {
-      if (err.name !== "NotFound") {
-        console.error(err);
-      }
-    });
+    const pdfHeadObjectData = await s3
+      .send(
+        new HeadObjectCommand({
+          Bucket: bucketName,
+          Key: outputKey,
+        })
+      )
+      .catch((err) => {
+        // See. https://docs.aws.amazon.com/AWSJavaScriptSDK/v3/latest/Package/-aws-sdk-client-s3/Class/NotFound/
+        if (err.name !== "NotFound") {
+          throw err;
+        }
+      });
 
-    if (headObjectData) {
-      // ファイルが存在すればそれをそのままレスポンスとして返す
-      const getObjectParams = { Bucket: bucketName, Key: outputKey };
-      const getObjectCommand = new GetObjectCommand(getObjectParams);
-      const data = await s3.send(getObjectCommand);
+    if (pdfHeadObjectData) {
+      // 変換後のPDFファイルが存在すればそれをそのままレスポンスとして返す
+      const pdfData = await s3.send(
+        new GetObjectCommand({
+          Bucket: bucketName,
+          Key: outputKey,
+        })
+      );
 
-      if (data.Body) {
-        const pdfBuffer = await data.Body.transformToByteArray();
+      if (pdfData.Body) {
+        const pdfBuffer = await pdfData.Body.transformToByteArray();
         return {
           statusCode: 200,
           body: Buffer.from(pdfBuffer).toString("base64"),
@@ -63,24 +67,28 @@ export const handler = async (event) => {
       }
     }
 
-    // S3からファイルをダウンロード
-    const getObjectParams = { Bucket: bucketName, Key: objectKey };
-    const getObjectCommand = new GetObjectCommand(getObjectParams);
-    const data = await s3.send(getObjectCommand);
+    // S3からOfficeファイルをダウンロード
+    const officeData = await s3.send(
+      new GetObjectCommand({
+        Bucket: bucketName,
+        Key: objectKey,
+      })
+    );
 
-    if (!data.Body) {
-      throw new Error(`ファイル ${objectKey} の内容を取得できません`);
+    if (!officeData.Body) {
+      throw new Error(`Unable to retrieve the contents of file ${objectKey}`);
     }
 
-    const inputFilePath = path.join(tmpPath, objectKey);
-
     // ファイルをローカルに保存
-    const fileBytes = await data.Body.transformToByteArray();
-    fs.writeFileSync(inputFilePath, Buffer.from(fileBytes));
+    const inputFilePath = path.join(tmpPath, objectKey);
+    const officeFileBytes = await officeData.Body.transformToByteArray();
+    fs.writeFileSync(inputFilePath, Buffer.from(officeFileBytes));
 
     // ファイルがPDFに変換可能か確認
+    // TODO: 許可するファイル形式の範囲が広すぎるので、適切なファイル形式のみを許可するように修正する（あとこのバリデーションは一番最初に行う方が良い）
+    // See. https://github.com/shelfio/aws-lambda-libreoffice/blob/v7.0.0/src/validations.ts
     if (!canBeConvertedToPDF(objectKey)) {
-      throw new Error(`ファイル ${objectKey} はPDFに変換できません`);
+      throw new Error(`The file ${objectKey} cannot be converted to PDF`);
     }
 
     // OfficeファイルをPDFに変換
@@ -99,14 +107,14 @@ export const handler = async (event) => {
     );
 
     // 変換後のファイルをS3にアップロード
-    const putObjectParams = {
-      Bucket: bucketName,
-      Key: outputKey,
-      Body: fs.createReadStream(outputFilePath),
-      ContentType: "application/pdf",
-    };
-    const putObjectCommand = new PutObjectCommand(putObjectParams);
-    await s3.send(putObjectCommand);
+    await s3.send(
+      new PutObjectCommand({
+        Bucket: bucketName,
+        Key: outputKey,
+        Body: fs.createReadStream(outputFilePath),
+        ContentType: "application/pdf",
+      })
+    );
 
     // PDFファイルをBase64エンコード
     const pdfBuffer = fs.readFileSync(outputFilePath);
