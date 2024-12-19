@@ -10,9 +10,9 @@ RUN dnf install -y xorg-x11-fonts-* libSM.x86_64 libXinerama-devel google-noto-s
 
 RUN cp /lib64/libssl.so.3 /lib64/libssl3.so
 
-RUN mkdir ~/libre && cd ~/libre && curl -s -L https://download.documentfoundation.org/libreoffice/stable/24.8.2/rpm/x86_64/LibreOffice_24.8.2_Linux_x86-64_rpm.tar.gz | tar xvz
+RUN mkdir ~/libre && cd ~/libre && curl -s -L https://downloadarchive.documentfoundation.org/libreoffice/old/24.8.3.2/rpm/x86_64/LibreOffice_24.8.3.2_Linux_x86-64_rpm.tar.gz | tar xvz
 
-RUN cd ~/libre/LibreOffice_24.8.2.1_Linux_x86-64_rpm/RPMS/ && rpm -Uvh *.rpm && rm -fr ~/libre
+RUN cd ~/libre/LibreOffice*/RPMS/ && rpm -Uvh *.rpm && rm -fr ~/libre
 
 RUN ln -s /opt/libreoffice24.8/program/soffice /usr/local/bin/soffice
 
