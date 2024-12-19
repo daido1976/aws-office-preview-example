@@ -3,7 +3,7 @@ import {
   ApiResponse,
   PreviewUrlResponse,
   UploadUrlResponse,
-} from "../../server";
+} from "../../server/types";
 import styles from "./App.module.css";
 
 export default function FileUploadPreview() {

@@ -1,29 +1,25 @@
-// TODO: 共通の型定義は shared package に切り出す
-export type ApiResponse<T> = {
-  success: boolean;
-  data: T | null;
-  error?: string;
-};
-export type UploadUrlRequestBody = { filename: string };
-export type UploadUrlResponse = { uploadUrl: string; fileId: string };
-export type PreviewUrlRequestBody = { fileId: string };
-export type PreviewUrlResponse = { previewUrl: string };
-
 import express, { Request, Response } from "express";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import * as crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  ApiResponse,
+  PreviewUrlRequestBody,
+  PreviewUrlResponse,
+  UploadUrlRequestBody,
+  UploadUrlResponse,
+} from "./types";
 
 const app = express();
 const port = 3000;
 
-// TODO: あとで環境変数に移動
 const s3 = new S3Client({
   endpoint: "http://localhost:9000", // MinIOのエンドポイント（ドメインは docker compose のサービス名）
   region: "ap-northeast-1", // MinIOでは任意の値でOK
   forcePathStyle: true, // パススタイルを有効化
+  // TODO: 環境変数に移動する
   credentials: {
     accessKeyId: "admin", // MinIOのルートユーザー名
     secretAccessKey: "password", // MinIOのルートパスワード
@@ -32,14 +28,13 @@ const s3 = new S3Client({
 
 const BUCKET_NAME = process.env.S3_BUCKET_NAME || "test-bucket";
 
-// SPA のビルドファイルディレクトリ
+// client側でビルドしたファイルをexpressで配信して同一オリジンとする（CORS対応せずに済ませたいため）
 const clientBuildPath = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
   "../client/dist"
 );
 app.use(express.static(clientBuildPath));
 
-// JSON パーサーを有効化
 app.use(express.json());
 
 const generateFileId = () => crypto.randomUUID();
@@ -49,7 +44,7 @@ const generateKey = (fileId: string, filename: string): string => {
   return `${fileId}${extension}`;
 };
 
-// 簡易的なDBとしてメモリに保存（単一ファイルのみ対応）
+// 簡易的なDBとしてアップロードするファイルの情報をメモリに保存（単一ファイルのみ対応）
 const uploadFileStore = (() => {
   let uploadFile: { fileId: string; filename: string } | null = null;
 
@@ -64,7 +59,6 @@ const uploadFileStore = (() => {
   };
 })();
 
-// API to get upload URL
 // NOTE: 本来は認証が必要
 app.post(
   "/api/get_upload_url",
@@ -97,7 +91,6 @@ app.post(
   }
 );
 
-// API to get preview URL
 // NOTE: 本来は認証が必要
 app.post(
   "/api/get_preview_url",
