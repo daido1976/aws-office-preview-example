@@ -4,7 +4,7 @@ import {
   PreviewUrlResponse,
   UploadUrlResponse,
 } from "../../server/types";
-import styles from "./App.module.css";
+import "./App.css";
 
 export default function App() {
   const [fileState, setFileState] = useState<{
@@ -154,28 +154,28 @@ export default function App() {
   };
 
   return (
-    <div className={styles.container}>
-      <h1 className={styles.title}>Office File Upload and Preview</h1>
+    <div className="container">
+      <h1 className="title">Office File Upload and Preview</h1>
 
-      <div className={styles.uploadArea}>
+      <div className="uploadArea">
         <div
-          className={styles.dropzone}
+          className="dropzone"
           onDragOver={handleDragOver}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
         >
           {fileState.file ? (
-            <div className={styles.fileInfo}>
+            <div className="fileInfo">
               <FileIcon />
               <span>{fileState.file.name}</span>
             </div>
           ) : (
             <>
-              <div className={styles.uploadIcon}>
+              <div className="uploadIcon">
                 <UploadIcon />
               </div>
               <p>Drag & drop a file here, or click to select</p>
-              <p className={styles.supportedFormats}>
+              <p className="supportedFormats">
                 (Supported formats: {allowedExtensions.join(", ")})
               </p>
             </>
@@ -190,36 +190,36 @@ export default function App() {
         />
 
         {fileState.file && !fileState.fileId && (
-          <button onClick={handleUpload} className={styles.button}>
+          <button onClick={handleUpload} className="button">
             Upload File
           </button>
         )}
 
         {fileState.fileId && !fileState.showPreview && (
-          <button onClick={handlePreview} className={styles.button}>
+          <button onClick={handlePreview} className="button">
             Preview File
           </button>
         )}
 
-        {error && <p className={styles.error}>{error}</p>}
+        {error && <p className="error">{error}</p>}
       </div>
 
       {fileState.showPreview && fileState.previewUrl && (
-        <div className={styles.previewArea}>
-          <div className={styles.previewHeader}>
+        <div className="previewArea">
+          <div className="previewHeader">
             <h2>File Preview</h2>
             <button
               onClick={() =>
                 setFileState((prev) => ({ ...prev, showPreview: false }))
               }
-              className={styles.closeButton}
+              className="closeButton"
             >
               Close
             </button>
           </div>
           <iframe
             src={fileState.previewUrl}
-            className={styles.preview}
+            className="preview"
             title="File Preview"
             onLoad={() =>
               window.scrollTo({
@@ -237,7 +237,7 @@ export default function App() {
 function UploadIcon() {
   return (
     <svg
-      className={styles.icon}
+      className="icon"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -255,7 +255,7 @@ function UploadIcon() {
 function FileIcon() {
   return (
     <svg
-      className={styles.icon}
+      className="icon"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
