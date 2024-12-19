@@ -1,4 +1,4 @@
-# clone from https://github.com/shelfio/libreoffice-lambda-base-image/blob/master/Dockerfile.node20-x86_64
+# ref. https://github.com/shelfio/libreoffice-lambda-base-image/blob/master/Dockerfile.node20-x86_64
 FROM public.ecr.aws/lambda/nodejs:20-x86_64
 
 ENV PATH=/var/lang/bin:/usr/local/bin:/usr/bin/:/bin:/opt/bin
@@ -25,8 +25,6 @@ RUN touch /tmp/test.txt \
   --nolockcheck --nologo --norestore --convert-to pdf \
   --outdir /tmp /tmp/test.txt \
   && rm /tmp/test.*
-
-# clone from https://github.com/shelfio/libreoffice-lambda-base-image/blob/master/Dockerfile.node20-x86_64
 
 COPY ./ ${LAMBDA_TASK_ROOT}/
 
