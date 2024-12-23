@@ -25,8 +25,10 @@ export default function App() {
 
   // ファイル拡張子の検証
   const isValidFile = (file: File): boolean => {
-    const fileExtension = file.name.split(".").at(-1)?.toLowerCase() ?? "";
-    return allowedExtensions.includes("." + fileExtension);
+    const fileExtension = file.name
+      .slice(file.name.lastIndexOf("."))
+      .toLowerCase();
+    return allowedExtensions.includes(fileExtension);
   };
 
   // ファイル選択時/ドロップ時の共通処理
