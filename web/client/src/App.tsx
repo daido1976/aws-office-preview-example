@@ -114,13 +114,14 @@ export default function App() {
   };
 
   const handleUpload = async () => {
-    if (!fileState.file) return;
+    const { file } = fileState;
+    if (!file) return;
 
     setError(null);
 
     try {
-      const { uploadUrl, fileId } = await fetchUploadUrl(fileState.file.name);
-      await uploadFileToS3(uploadUrl, fileState.file);
+      const { uploadUrl, fileId } = await fetchUploadUrl(file.name);
+      await uploadFileToS3(uploadUrl, file);
       // アップロードが成功したら、fileIdをセットする
       setFileState((prev) => ({ ...prev, fileId }));
 
