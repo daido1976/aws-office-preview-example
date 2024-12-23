@@ -52,7 +52,6 @@
 .icon {
   width: clamp(32px, 8vw, 48px);
   height: clamp(32px, 8vw, 48px);
-  color: var(--color-primary);
 }
 
 .uploadIcon {
