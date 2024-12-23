@@ -11,12 +11,10 @@ export default function App() {
     file: File | null;
     fileId: string | null;
     previewUrl: string | null;
-    showPreview: boolean;
   }>({
     file: null,
     fileId: null,
     previewUrl: null,
-    showPreview: false,
   });
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -41,7 +39,6 @@ export default function App() {
         file: null,
         fileId: null,
         previewUrl: null,
-        showPreview: false,
       });
       return;
     }
@@ -51,7 +48,6 @@ export default function App() {
       file: selectedFile,
       fileId: null,
       previewUrl: null,
-      showPreview: false,
     });
   };
 
@@ -133,7 +129,6 @@ export default function App() {
       setFileState((prev) => ({
         ...prev,
         previewUrl,
-        showPreview: true,
       }));
     } catch (error) {
       console.error("Error uploading file:", error);
@@ -146,7 +141,7 @@ export default function App() {
 
     try {
       const { previewUrl } = await fetchPreviewUrl(fileState.fileId);
-      setFileState((prev) => ({ ...prev, previewUrl, showPreview: true }));
+      setFileState((prev) => ({ ...prev, previewUrl }));
     } catch (error) {
       console.error("Error getting preview URL:", error);
       setError("Failed to get preview URL. Please try again.");
@@ -195,7 +190,7 @@ export default function App() {
           </button>
         )}
 
-        {fileState.fileId && !fileState.showPreview && (
+        {fileState.fileId && !fileState.previewUrl && (
           <button onClick={handlePreview} className="button">
             Preview File
           </button>
@@ -204,13 +199,13 @@ export default function App() {
         {error && <p className="error">{error}</p>}
       </div>
 
-      {fileState.showPreview && fileState.previewUrl && (
+      {fileState.previewUrl && (
         <div className="previewArea">
           <div className="previewHeader">
             <h2>File Preview</h2>
             <button
               onClick={() =>
-                setFileState((prev) => ({ ...prev, showPreview: false }))
+                setFileState((prev) => ({ ...prev, previewUrl: null }))
               }
               className="closeButton"
             >
