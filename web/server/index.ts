@@ -16,7 +16,7 @@ const app = express();
 const port = 3000;
 
 const s3 = new S3Client({
-  endpoint: "http://localhost:9000", // MinIOのエンドポイント（ドメインは docker compose のサービス名）
+  endpoint: "http://localhost:9000", // MinIOのエンドポイント
   region: "ap-northeast-1", // MinIOでは任意の値でOK
   forcePathStyle: true, // パススタイルを有効化
   // TODO: 環境変数に移動する
@@ -107,7 +107,8 @@ app.post(
       return;
     }
     const lambdaFunctionUrl = "http://localhost:8080";
-    // NOTE: #navpanes=0をつけることでChromeとEdgeでのPDFの表示をカスタマイズできる
+    // #navpanes=0をつけることでChromeとEdgeでのPDFの表示をカスタマイズできる
+    // See. https://pdfobject.com/pdf/pdf_open_parameters_acro8.pdf#page=7
     const previewUrl = `${lambdaFunctionUrl}?key=${generateKey(
       uploadFile.fileId,
       uploadFile.filename
