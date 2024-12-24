@@ -39,8 +39,7 @@ app.use(express.json());
 
 const generateFileId = () => crypto.randomUUID();
 const generateKey = (fileId: string, filename: string): string => {
-  const extensionMatch = filename.match(/\.[^.]+$/);
-  const extension = extensionMatch ? extensionMatch[0] : "";
+  const extension = path.extname(filename); // e.g. ".xlsx"
   return `${fileId}${extension}`;
 };
 
